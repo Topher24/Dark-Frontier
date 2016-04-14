@@ -35,7 +35,8 @@ EnemyTank = function (index, game, player, bullets) {
 
 EnemyTank.prototype.damage = function(damage) {
 
-    this.health -= damage;
+
+        this.health -= damage;
 
     if (this.health <= 0)
     {
@@ -90,6 +91,7 @@ function preload () {
     game.load.spritesheet('kaboom', 'assets/explosion.png', 64, 64, 23);
     game.load.image('colTest', 'assets/Test.png');
     game.load.image('trishot', 'assets/triBullet.png');
+    game.load.image('shield', 'assets/shield.png');
 
 }
 
@@ -119,6 +121,9 @@ var bulletType;
 var speedBoost = false;
 var clock2;
 
+var invulnerable = false;
+var shield;
+
 
 
 
@@ -136,6 +141,7 @@ function create () {
     tank = game.add.sprite(0, 0, 'tank', 'tank1');
     tank.anchor.setTo(0.5, 0.5);
     tank.animations.add('move', ['tank1', 'tank2', 'tank3', 'tank4', 'tank5', 'tank6'], 20, true);
+    tank.health = 100;
 
     //  This will force it to decelerate and limit its speed
     game.physics.enable(tank, Phaser.Physics.ARCADE);
@@ -179,6 +185,10 @@ function create () {
     //  A shadow below our tank
     shadow = game.add.sprite(0, 0, 'tank', 'shadow');
     shadow.anchor.setTo(0.5, 0.5);
+
+    shield = game.add.sprite(0, 0, 'shield');
+    shield.anchor.setTo(0.5, 0.5);
+    shield.scale.setTo(0.2, 0.2);
 
     //  Our bullet group
     bullets = game.add.group();
@@ -226,7 +236,7 @@ function create () {
 
     cursors = game.input.keyboard.createCursorKeys();
 
-    clock2 = new Phaser.Timer(game, true);
+
 
 }
 
@@ -303,6 +313,10 @@ function update () {
     shadow.y = tank.y;
     shadow.rotation = tank.rotation;
 
+    shield.x = tank.x;
+    shield.y = tank.y;
+    shield.rotation = tank.rotation;
+
     turret.x = tank.x;
     turret.y = tank.y;
 
@@ -317,29 +331,34 @@ function update () {
         //console.log("fire");
     }
 
+    if(invulnerable == true){
+       tank.tint = 0xFF0000;
+        turret.tint = 0xFF0000;
+        tank.alpha = 0.3;
+        turret.alpha = 0.3;
+    }
+
+    if(invulnerable == false){
+        tank.tint = 0xFFFFFF;
+        turret.tint = 0xFFFFFF;
+        tank.alpha = 1;
+        turret.alpha = 1;
+    }
+
 
 
 }
 
 function killTest(turboFire, tank)
 {
-
-
-
     //speedBoost = true;
 
-   // var clock = game.time.events.add(4000, clockOver(1), game.context);
+    //shield = true;
 
-    //clock2.next = 4000;
-    clock2.start(20000);
+    var clock = game.time.events.add(Phaser.Timer.SECOND * 15, clockOver, game, 2);
+    turboFire.kill();
 
 
-    //if(clock2.expired){
-        //console.log("clock over");
-    //}
-    //turboFire.kill();
-
-    clockOver(1);
 
 
     //bulletType = 2;
@@ -347,15 +366,43 @@ function killTest(turboFire, tank)
 
 }
 function clockOver(type){
-    speedBoost = false;
-    console.log(clock2.duration);
+
+    console.log(invulnerable);
+
+    if(type == 1)
+        speedBoost = false;
+
+
+    if(type == 2)
+        invulnerable = false;
+
+    console.log("Time stopped");
+
+
+
+
+    // console.log(clock2.seconds);
 }
 
 function bulletHitPlayer (tank, bullet) {
 
-    bullet.kill();
+
+
+    if(invulnerable == false) {
+        tank.damage(1);
+        bullet.kill();
+
+        invulnerable = true;
+
+        var clock = game.time.events.add(Phaser.Timer.SECOND * 2, clockOver, game, 2);
+    }
+
+
+
+
 
 }
+
 
 function bulletHitEnemy (tank, bullet) {
 
@@ -407,6 +454,7 @@ function render () {
 
     // game.debug.text('Active Bullets: ' + bullets.countLiving() + ' / ' + bullets.length, 32, 32);
     game.debug.text('Enemies: ' + enemiesAlive + ' / ' + enemiesTotal, 32, 32);
+    game.debug.text('Health ' + tank.health + ' / ' + enemiesTotal, 32, 52);
 
 }
 
