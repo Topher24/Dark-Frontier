@@ -76,10 +76,22 @@ EnemyTank.prototype.update = function() {
             bullet.rotation = this.game.physics.arcade.moveToObject(bullet, this.player, 500);
         }
     }
+    console.log(this.tank.position.y );
 
+    if (this.tank.position.y > boundary1){
+        this.tank.position.y = boundary1 - 1;
+        this.tank.body.velocity.y = -this.tank.body.velocity.y;
+        console.log("Out of bounds Sir");
+    }
+
+    if (this.tank.position.y < boundary){
+        this.tank.position.y = boundary + 1;
+        this.tank.body.velocity.y = -this.tank.body.velocity.y;
+        console.log("Out of bounds Sir");
+    }
 };
 
-var game = new Phaser.Game(800, 600, Phaser.AUTO, 'phaser-example', { preload: preload, create: create, update: update, render: render });
+var game = new Phaser.Game(600, 800, Phaser.AUTO, 'phaser-example', { preload: preload, create: create, update: update, render: render });
 
 function preload () {
 
@@ -107,6 +119,8 @@ var enemiesTotal = 0;
 var enemiesAlive = 0;
 var explosions;
 var triShot;
+var boundary = 250;
+var boundary1 = 550;
 
 var logo;
 
@@ -131,14 +145,14 @@ var shield;
 function create () {
 
     //  Resize our game world to be a 2000 x 2000 square
-    game.world.setBounds(-1000, -1000, 2000, 2000);
+    game.world.setBounds(0, 0, 600, 800);
 
     //  Our tiled scrolling background
-    land = game.add.tileSprite(0, 0, 800, 600, 'earth', 0);
+    land = game.add.tileSprite(0, 0, 600, 800, 'earth', 0);
     land.fixedToCamera = true;
 
     //  The base of our tank
-    tank = game.add.sprite(0, 0, 'tank', 'tank1');
+    tank = game.add.sprite (300, 800, 'tank', 'tank1');
     tank.anchor.setTo(0.5, 0.5);
     tank.animations.add('move', ['tank1', 'tank2', 'tank3', 'tank4', 'tank5', 'tank6'], 20, true);
     tank.health = 100;
@@ -174,8 +188,8 @@ function create () {
     //  Create some baddies to waste :)
     enemies = [];
 
-    enemiesTotal = 20;
-    enemiesAlive = 20;
+    enemiesTotal = 5;
+    enemiesAlive = 5;
 
     for (var i = 0; i < enemiesTotal; i++)
     {
@@ -265,6 +279,8 @@ function update () {
                 game.physics.arcade.overlap(triShot, enemies[i].tank, bulletHitEnemy, null, this);
 
             enemies[i].update();
+
+
             
         }
     }
@@ -275,16 +291,26 @@ function update () {
 
 
 
+//  The speed we'll travel at
+    if(!speedBoost)
+        currentSpeed = 3;
+    else
+        currentSpeed = 10;
+
     if (cursors.left.isDown)
     {
-        tank.angle -= 4;
+
+        tank.position.x -= currentSpeed;
+        //game.physics.arcade.accelerateToXY(tank, 600,300, currentSpeed);
     }
     else if (cursors.right.isDown)
     {
-        tank.angle += 4;
+
+        tank.position.x += currentSpeed;
+        //game.physics.arcade.accelerateToXY(tank, 0,300, currentSpeed);
     }
 
-    if (cursors.up.isDown)
+    /* if (cursors.up.isDown)
     {
         //  The speed we'll travel at
         if(!speedBoost)
@@ -303,7 +329,7 @@ function update () {
     if (currentSpeed > 0)
     {
         game.physics.arcade.velocityFromRotation(tank.rotation, currentSpeed, tank.body.velocity);
-    }
+    } */
 
     land.tilePosition.x = -game.camera.x;
     land.tilePosition.y = -game.camera.y;
@@ -344,9 +370,7 @@ function update () {
         tank.alpha = 1;
         turret.alpha = 1;
     }
-
-
-
+    
 }
 
 function killTest(turboFire, tank)
