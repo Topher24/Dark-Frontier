@@ -76,18 +76,18 @@ EnemyTank.prototype.update = function() {
             bullet.rotation = this.game.physics.arcade.moveToObject(bullet, this.player, 500);
         }
     }
-    console.log(this.tank.position.y );
+   // console.log(this.tank.position.y );
 
     if (this.tank.position.y > boundary1){
-        this.tank.position.y = boundary1 - 1;
+        this.tank.position.y = boundary1 - 5;
         this.tank.body.velocity.y = -this.tank.body.velocity.y;
-        console.log("Out of bounds Sir");
+        //console.log("Out of bounds Sir");
     }
 
     if (this.tank.position.y < boundary){
-        this.tank.position.y = boundary + 1;
+        this.tank.position.y = boundary + 5;
         this.tank.body.velocity.y = -this.tank.body.velocity.y;
-        console.log("Out of bounds Sir");
+       // console.log("Out of bounds Sir");
     }
 };
 
@@ -104,6 +104,11 @@ function preload () {
     game.load.image('colTest', 'assets/Test.png');
     game.load.image('trishot', 'assets/triBullet.png');
     game.load.image('shield', 'assets/shield.png');
+
+    game.load.image('P_shield', 'assets/shield_P.png');
+    game.load.image('P_Turbo', 'assets/Turbo.png');
+    game.load.image('P_Trishot', 'assets/Trishot.png');
+    game.load.image('P_FireRate' , 'assets/FireRate.png');
 
 }
 
@@ -133,15 +138,16 @@ var nextFire = 0;
 
 var bulletType;
 var speedBoost = false;
-var clock2;
+
 
 var invulnerable = false;
 var shield;
-
-
-
-
-
+var shieldCount = 0;
+var shieldBool = false;
+var P_shield;
+var P_Turbo;
+var P_FireRate;
+var P_Trishot;
 function create () {
 
     //  Resize our game world to be a 2000 x 2000 square
@@ -163,12 +169,42 @@ function create () {
     tank.body.maxVelocity.setTo(400, 400);
     tank.body.collideWorldBounds = true;
 
+    P_shield = game.add.group();
+    P_shield.enableBody = true;
+    P_shield.physicsBodyType = Phaser.Physics.ARCADE;
+    P_shield.createMultiple(5, 'P_shield');
+    P_shield.setAll('anchor.x', 0.5);
+    P_shield.setAll('anchor.y', 0.5);
+    P_shield.setAll('outOfBoundsKill', true);
 
 
-    colTest = game.add.sprite(122, 500, 'colTest', 'colTest');
-    colTest.anchor.setTo(0.5, 0.5);
-    game.physics.enable(colTest, Phaser.Physics.ARCADE);
+    P_Turbo = game.add.group();
+    P_Turbo.enableBody = true;
+    P_Turbo.physicsBodyType = Phaser.Physics.ARCADE;
+    P_Turbo.createMultiple(5, 'P_Turbo');
+    P_Turbo.setAll('anchor.x', 0.5);
+    P_Turbo.setAll('anchor.y', 0.5);
+    P_Turbo.setAll('outOfBoundsKill', true);
 
+
+    P_FireRate = game.add.group();
+    P_FireRate.enableBody = true;
+    P_FireRate.physicsBodyType = Phaser.Physics.ARCADE;
+    P_FireRate.createMultiple(5, 'P_FireRate');
+    P_FireRate.setAll('anchor.x', 0.5);
+    P_FireRate.setAll('anchor.y', 0.5);
+    P_FireRate.setAll('outOfBoundsKill', true);
+
+
+    P_Trishot = game.add.group();
+    P_Trishot.enableBody = true;
+    P_Trishot.physicsBodyType = Phaser.Physics.ARCADE;
+    P_Trishot.createMultiple(5, 'P_Trishot');
+    P_Trishot.setAll('anchor.x', 0.5);
+    P_Trishot.setAll('anchor.y', 0.5);
+    P_Trishot.setAll('outOfBoundsKill', true);
+
+    shield = game.make.sprite(tank.x, tank.y, 'shield');
 
     //  Finally the turret that we place on-top of the tank body
     turret = game.add.sprite(0, 0, 'tank', 'turret');
@@ -185,6 +221,9 @@ function create () {
     enemyBullets.setAll('outOfBoundsKill', true);
     enemyBullets.setAll('checkWorldBounds', true);
 
+   // animateERockets = enemyBullets.animations.add("Fire");
+
+    //enemyBullets.animations.play('Fire', 30, true);
     //  Create some baddies to waste :)
     enemies = [];
 
@@ -200,7 +239,7 @@ function create () {
     shadow = game.add.sprite(0, 0, 'tank', 'shadow');
     shadow.anchor.setTo(0.5, 0.5);
 
-    shield = game.add.sprite(0, 0, 'shield');
+   // shield = game.add.sprite(0, 0, 'shield');
     shield.anchor.setTo(0.5, 0.5);
     shield.scale.setTo(0.2, 0.2);
 
@@ -265,13 +304,20 @@ function update () {
 
     game.physics.arcade.overlap(enemyBullets, tank, bulletHitPlayer, null, this);
 
-    enemiesAlive = 0;
+
+
+    if (enemiesAlive == 0){
+        enemiesTotal ++;
+        enemiesAlive = enemiesTotal;
+        console.log("YOU WIN!!");
+    }
+
 
     for (var i = 0; i < enemies.length; i++)
     {
         if (enemies[i].alive)
         {
-            enemiesAlive++;
+            //enemiesAlive++;
             game.physics.arcade.collide(tank, enemies[i].tank);
             if(bulletType == 1)
                 game.physics.arcade.overlap(bullets, enemies[i].tank, bulletHitEnemy, null, this);
@@ -284,10 +330,12 @@ function update () {
             
         }
     }
-    
-    game.physics.arcade.overlap(colTest, tank, killTest, null, this);
 
 
+    game.physics.arcade.overlap(P_FireRate, tank, F_FireRate, null, this);
+    game.physics.arcade.overlap(P_shield, tank, F_shield, null, this);
+    game.physics.arcade.overlap(P_Trishot, tank, F_Trishot, null, this);
+    game.physics.arcade.overlap(P_Turbo, tank, F_Turbo, null, this);
 
 
 
@@ -373,55 +421,102 @@ function update () {
     
 }
 
-function killTest(turboFire, tank)
-{
-    //speedBoost = true;
-
-    //shield = true;
-
-    var clock = game.time.events.add(Phaser.Timer.SECOND * 15, clockOver, game, 2);
-    turboFire.kill();
-
-
-
-
-    //bulletType = 2;
-    //fireRate = 10;
-
+function F_shield(tank, pickup){
+    shield = game.add.existing(shield);
+    shieldBool = true;
+    pickup.kill();
 }
+
+function F_Turbo(tank, pickup){
+    speedBoost = true;
+    pickup.kill();
+    var clock = game.time.events.add(Phaser.Timer.SECOND * 4, clockOver, game, 2);
+}
+
+function F_Trishot(tank , pickup){
+    bulletType = 2;
+    pickup.kill();
+    var clock = game.time.events.add(Phaser.Timer.SECOND * 4, clockOver, game, 3);
+}
+
+function F_FireRate(tank, pickup){
+
+    fireRate = 10;
+    pickup.kill();
+    var clock = game.time.events.add(Phaser.Timer.SECOND * 4, clockOver, game, 4);
+}
+
+
 function clockOver(type){
 
-    console.log(invulnerable);
-
-    if(type == 1)
+    if(type == 2)
         speedBoost = false;
 
+    if(type == 3)
+        bulletType = 1;
 
-    if(type == 2)
+    if(type == 4)
+        fireRate = 100;
+
+    if(type == 5)
         invulnerable = false;
 
-    console.log("Time stopped");
-
-
-
-
-    // console.log(clock2.seconds);
 }
 
 function bulletHitPlayer (tank, bullet) {
+    bullet.kill();
 
+    if (shieldBool == true) {
 
+        shieldCount+= 1;
 
-    if(invulnerable == false) {
-        tank.damage(1);
-        bullet.kill();
+        if(shieldCount == 3){
 
-        invulnerable = true;
+            shieldCount = 0;
+            shieldBool = false;
+            shield.kill();
 
-        var clock = game.time.events.add(Phaser.Timer.SECOND * 2, clockOver, game, 2);
+            if (invulnerable == false) {
+                tank.damage(1);
+                invulnerable = true;
+
+                var clock = game.time.events.add(Phaser.Timer.SECOND * 2, clockOver, game, 5);
+            }
+        }
     }
+}
+
+function randDrop(tank){
+
+    var int = game.rnd.integerInRange(0, 100);
+    var pickup;
 
 
+    if (int >61 && int < 70){
+
+        pickup = P_shield.getFirstExists(false);
+        pickup.reset(tank.x, tank.y);
+        game.physics.arcade.moveToXY(pickup, tank.x, 700, 300);
+        console.log("60");
+    }
+    if (int >71 && int < 80){
+        pickup = P_Trishot.getFirstExists(false);
+        pickup.reset(tank.x, tank.y);
+        game.physics.arcade.moveToXY(pickup, tank.x, 700, 300);
+        console.log("70");
+    }
+    if (int >81 && int < 90){
+        pickup = P_FireRate.getFirstExists(false);
+        pickup.reset(tank.x, tank.y);
+        game.physics.arcade.moveToXY(pickup, tank.x, 700, 300);
+        console.log("80");
+    }
+    if (int >91 && int < 100){
+        pickup = P_Turbo.getFirstExists(false);
+        pickup.reset(tank.x, tank.y);
+        game.physics.arcade.moveToXY(pickup, tank.x, 700, 300);
+        console.log("90");
+    }
 
 
 
@@ -444,13 +539,15 @@ function bulletHitEnemy (tank, bullet) {
         var explosionAnimation = explosions.getFirstExists(false);
         explosionAnimation.reset(tank.x, tank.y);
         explosionAnimation.play('kaboom', 30, false, true);
+        randDrop(tank);
+        enemiesAlive--;
     }
 
 }
 
 function fire () {
 
-    if (game.time.now > nextFire && bullets.countDead() > 0)
+    if (game.time.now > nextFire && bullets.countDead() > 0 && triShot.countDead() > 0)
     {
 
 
