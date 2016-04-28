@@ -302,6 +302,8 @@ function removeLogo () {
 
 function update () {
 
+    //TEST FOR GITHUB!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    console.log("will this work?");
     game.physics.arcade.overlap(enemyBullets, tank, bulletHitPlayer, null, this);
 
 
