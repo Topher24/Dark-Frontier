@@ -36,7 +36,7 @@ EnemyTank = function (index, game, player, bullets) {
 EnemyTank.prototype.damage = function(damage) {
 
 
-        this.health -= damage;
+    this.health -= damage;
 
     if (this.health <= 0)
     {
@@ -76,7 +76,7 @@ EnemyTank.prototype.update = function() {
             bullet.rotation = this.game.physics.arcade.moveToObject(bullet, this.player, 500);
         }
     }
-   // console.log(this.tank.position.y );
+    // console.log(this.tank.position.y );
 
     if (this.tank.position.y > boundary1){
         this.tank.position.y = boundary1 - 5;
@@ -87,7 +87,7 @@ EnemyTank.prototype.update = function() {
     if (this.tank.position.y < boundary){
         this.tank.position.y = boundary + 5;
         this.tank.body.velocity.y = -this.tank.body.velocity.y;
-       // console.log("Out of bounds Sir");
+        // console.log("Out of bounds Sir");
     }
 };
 
@@ -112,11 +112,15 @@ function preload () {
 
 }
 
+
 var land;
 
 var shadow;
 var tank;
+var tank2;
 var turret;
+var turret2;
+
 var colTest;
 var enemies;
 var enemyBullets;
@@ -137,6 +141,7 @@ var fireRate = 100;
 var nextFire = 0;
 
 var bulletType;
+var bulletType2;
 var speedBoost = false;
 
 
@@ -148,6 +153,16 @@ var P_shield;
 var P_Turbo;
 var P_FireRate;
 var P_Trishot;
+
+var name1;
+var name2;
+
+var fb;
+var locations;
+var BulletsFB;
+var playerBullets;
+
+var firing = false;
 function create () {
 
     //  Resize our game world to be a 2000 x 2000 square
@@ -168,6 +183,17 @@ function create () {
     tank.body.drag.set(0.2);
     tank.body.maxVelocity.setTo(400, 400);
     tank.body.collideWorldBounds = true;
+
+    tank2 = game.add.sprite (300, 800, 'tank', 'tank1');
+    tank2.anchor.setTo(0.5, 0.5);
+    tank2.animations.add('move', ['tank1', 'tank2', 'tank3', 'tank4', 'tank5', 'tank6'], 20, true);
+    tank2.health = 100;
+
+    //  This will force it to decelerate and limit its speed
+    game.physics.enable(tank2, Phaser.Physics.ARCADE);
+    tank2.body.drag.set(0.2);
+    tank2.body.maxVelocity.setTo(400, 400);
+    tank2.body.collideWorldBounds = true;
 
     P_shield = game.add.group();
     P_shield.enableBody = true;
@@ -210,6 +236,9 @@ function create () {
     turret = game.add.sprite(0, 0, 'tank', 'turret');
     turret.anchor.setTo(0.3, 0.5);
 
+    turret2 = game.add.sprite(0, 0, 'tank', 'turret');
+    turret2.anchor.setTo(0.3, 0.5);
+
     //  The enemies bullet group
     enemyBullets = game.add.group();
     enemyBullets.enableBody = true;
@@ -221,14 +250,14 @@ function create () {
     enemyBullets.setAll('outOfBoundsKill', true);
     enemyBullets.setAll('checkWorldBounds', true);
 
-   // animateERockets = enemyBullets.animations.add("Fire");
+    // animateERockets = enemyBullets.animations.add("Fire");
 
     //enemyBullets.animations.play('Fire', 30, true);
     //  Create some baddies to waste :)
     enemies = [];
 
-    enemiesTotal = 5;
-    enemiesAlive = 5;
+    enemiesTotal = 20;
+    enemiesAlive = 20;
 
     for (var i = 0; i < enemiesTotal; i++)
     {
@@ -239,7 +268,7 @@ function create () {
     shadow = game.add.sprite(0, 0, 'tank', 'shadow');
     shadow.anchor.setTo(0.5, 0.5);
 
-   // shield = game.add.sprite(0, 0, 'shield');
+    // shield = game.add.sprite(0, 0, 'shield');
     shield.anchor.setTo(0.5, 0.5);
     shield.scale.setTo(0.2, 0.2);
 
@@ -254,6 +283,17 @@ function create () {
     bullets.setAll('checkWorldBounds', true);
     bulletType = 1;
 
+
+    playerBullets = game.add.group();
+    playerBullets.enableBody = true;
+    playerBullets.physicsBodyType = Phaser.Physics.ARCADE;
+    playerBullets.createMultiple(30, 'bullet', 0, false);
+    playerBullets.setAll('anchor.x', 0.5);
+    playerBullets.setAll('anchor.y', 0.5);
+    playerBullets.setAll('outOfBoundsKill', true);
+    playerBullets.setAll('checkWorldBounds', true);
+
+
     //  Our trishot group
     triShot = game.add.group();
     triShot.enableBody = true;
@@ -267,7 +307,7 @@ function create () {
 
     //  Explosion pool
     explosions = game.add.group();
-    
+
     for (var j = 0; j < 10; j++)
     {
         var explosionAnimation = explosions.create(0, 0, 'kaboom',0, false);
@@ -277,6 +317,9 @@ function create () {
 
     tank.bringToTop();
     turret.bringToTop();
+
+    tank2.bringToTop();
+    turret2.bringToTop();
 
     logo = game.add.sprite(0, 200, 'logo');
     logo.fixedToCamera = true;
@@ -289,22 +332,223 @@ function create () {
 
     cursors = game.input.keyboard.createCursorKeys();
 
+    fb = new Firebase('https://dark-frontier.firebaseio.com/');
+    locations = {};
+    BulletsFB = {};
+
+    initFB();
+    addLocation('Ian', tank.x, turret.rotation);
+    bullets.forEach(getName, this);
+    bullets.forEach(addBullets, this);
 
 
 }
 
 function removeLogo () {
-
     game.input.onDown.remove(removeLogo, this);
     logo.kill();
+}
 
+function getName(bullet){
+
+    bullet.name = bullets.getIndex(bullet);
+
+}
+
+function initFB(){
+    if (fb) {
+        // This gets a reference to the 'location" node.
+        var fbLocation = fb.child("/location");
+        var fbBullets = fb.child("/bullets");
+        // Now we can install event handlers for nodes added, changed and removed.
+        fbLocation.on('child_added', function(sn){
+            var data = sn.val();
+            // console.dir({'added': data});
+            locations[sn.key()] = data;
+        });
+        fbLocation.on('child_changed', function(sn){
+            var data = sn.val();
+            locations[sn.key()] = data;
+            //console.dir({'moved': data})
+        });
+        fbLocation.on('child_removed', function(sn){
+            var data = sn.val();
+            delete locations[sn.key()];
+            //console.dir(({'removed': data}));
+        });
+
+
+
+        fbBullets.on('child_added', function(sn){
+            var data = sn.val();
+            // console.dir({'added': data});
+            BulletsFB[sn.key()] = data;
+        });
+        fbBullets.on('child_changed', function(sn){
+            var data = sn.val();
+            BulletsFB[sn.key()] = data;
+            //console.dir({'moved': data})
+        });
+        fbBullets.on('child_removed', function(sn){
+            var data = sn.val();
+            delete BulletsFB[sn.key()];
+            //console.dir(({'removed': data}));
+        });
+    }
+
+}
+
+function getKey(name){
+    var loc= 0;
+    for(loc in locations){
+        if(locations[loc].player == name){
+            return loc;
+            //console.log(loc + " Loc");
+        }
+    }
+    return null;
+}
+
+function getBulletKey(name){
+    var loc;
+    for(loc in BulletsFB){
+        // console.log("Bulllet" +name);
+        if(BulletsFB[loc].name == name){
+            return loc;
+
+        }
+    }
+    return null;
+}
+
+function addLocation(name, x, rotation) {
+    // Prevent a duplicate name...
+    if (getKey(name)) return;
+    //console.log(getKey(name));
+    // Name is valid - go ahead and add it...
+    fb.child("/location").push({
+        player: name,
+        x: x,
+        timestamp: Firebase.ServerValue.TIMESTAMP,
+        rotation: rotation
+
+    }, function(err) {
+        if(err) console.dir(err);
+    });
+
+}
+
+function formatPlayerInfo(location) {
+    "use strict";
+    var info = location + ":", loc = locations[location];
+    info += loc.player + " @ (" + loc.x + ", " + loc.y + ") - " + loc.timestamp + "\n";
+    if(loc.player == 'Chris'){
+        tank2.x = loc.x;
+        turret2.rotation = loc.rotation;
+    }
+    //console.log(loc.x);
+    //console.log(loc);
+}
+
+function showLocations() {
+    "use strict";
+    var loc, info = "";
+    for (loc in locations) {
+        info += formatPlayerInfo(loc);
+
+    }
+}
+
+function addBullets(bullets){
+
+    fb.child("/bullets").push({
+        x : bullets.x,
+        y: bullets.y,
+        type: bulletType,
+        name: bullets.name
+
+
+    }, function(err) {
+        if(err) console.dir(err);
+    });
+
+}
+
+function showBullets() {
+    "use strict";
+    var loc, info = "";
+    for (loc in BulletsFB) {
+        info += getBullets(loc);
+
+    }
+}
+
+function getBullets(bullets){
+    var info = bullets + ":", loc = BulletsFB[bullets], itt = 0;
+    //info += loc.player + " @ (" + loc.x + ", " + loc.y + ") - " + loc.timestamp + "\n";
+    if(loc != null) {
+        var N_bullets = playerBullets.getFirstExists(false);
+        N_bullets.x = loc.x;
+        N_bullets.y = loc.y;
+        bulletType2 = loc.type;
+    }
+    // console.log(loc.x);
+    //console.log(loc);
+}
+
+function updateLocation(ref, name, x, rotation){
+
+    fb.child("/location/" + ref).set({
+        player: name,
+        x: x,
+        timestamp: Firebase.ServerValue.TIMESTAMP,
+        rotation: rotation
+    }, function(err) {
+        if(err) {
+            console.dir(err);
+        }
+    });
+
+}
+
+function updateBullet(bullet){
+    var ref = getBulletKey(bullet.name);
+    //console.log(ref);
+    //console.log(bullet.name);
+    fb.child("/bullets/" + ref).set({
+        x: bullet.x,
+        y: bullet.y,
+        name: bullet.name,
+        type: bulletType
+    }, function(err) {
+        if(err) {
+            console.dir(err);
+        }
+    })
 }
 
 function update () {
 
-    //TEST FOR GITHUB!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    console.log("will this work?");
     game.physics.arcade.overlap(enemyBullets, tank, bulletHitPlayer, null, this);
+
+    //updateLoc(1);
+    showLocations();
+
+    updateLocation(getKey('Ian'),'Ian', tank.x , turret.rotation);
+
+    showBullets();
+    if(firing) {
+
+        //updateBullet(getKey(bullets.forEach(getName(this), this)), bullets.getFirstExists(false));
+        bullets.forEach(updateBullet, this );
+        //updateBullet(bullets.forEach(getName, this), )
+        //updateBullet(getKey(bullet.forEach(getName(this)), this), )
+        console.log(BulletsFB[getBulletKey("0")]);
+
+    }
+
+    playerBullets.forEach(getBullets, this);
+
 
 
 
@@ -329,7 +573,7 @@ function update () {
             enemies[i].update();
 
 
-            
+
         }
     }
 
@@ -361,25 +605,25 @@ function update () {
     }
 
     /* if (cursors.up.isDown)
-    {
-        //  The speed we'll travel at
-        if(!speedBoost)
-            currentSpeed = 300;
-        else
-            currentSpeed = 6000;
-    }
-    else
-    {
-        if (currentSpeed > 0)
-        {
-            currentSpeed -= 4;
-        }
-    }
+     {
+     //  The speed we'll travel at
+     if(!speedBoost)
+     currentSpeed = 300;
+     else
+     currentSpeed = 6000;
+     }
+     else
+     {
+     if (currentSpeed > 0)
+     {
+     currentSpeed -= 4;
+     }
+     }
 
-    if (currentSpeed > 0)
-    {
-        game.physics.arcade.velocityFromRotation(tank.rotation, currentSpeed, tank.body.velocity);
-    } */
+     if (currentSpeed > 0)
+     {
+     game.physics.arcade.velocityFromRotation(tank.rotation, currentSpeed, tank.body.velocity);
+     } */
 
     land.tilePosition.x = -game.camera.x;
     land.tilePosition.y = -game.camera.y;
@@ -396,6 +640,9 @@ function update () {
     turret.x = tank.x;
     turret.y = tank.y;
 
+    turret2.x = tank2.x;
+    turret2.y = tank2.y;
+
     turret.rotation = game.physics.arcade.angleToPointer(turret);
 
     if (game.input.activePointer.isDown)
@@ -403,12 +650,15 @@ function update () {
         //  Boom!
         fire();
 
-
+        firing = true;
         //console.log("fire");
+    }
+    else{
+        firing = false;
     }
 
     if(invulnerable == true){
-       tank.tint = 0xFF0000;
+        tank.tint = 0xFF0000;
         turret.tint = 0xFF0000;
         tank.alpha = 0.3;
         turret.alpha = 0.3;
@@ -420,8 +670,10 @@ function update () {
         tank.alpha = 1;
         turret.alpha = 1;
     }
-    
+
 }
+
+
 
 function F_shield(tank, pickup){
     shield = game.add.existing(shield);
@@ -447,7 +699,6 @@ function F_FireRate(tank, pickup){
     pickup.kill();
     var clock = game.time.events.add(Phaser.Timer.SECOND * 4, clockOver, game, 4);
 }
-
 
 function clockOver(type){
 
@@ -524,14 +775,12 @@ function randDrop(tank){
 
 }
 
-
 function bulletHitEnemy (tank, bullet) {
-
     bullet.kill();
 
     var destroyed;
     if(bulletType  == 1)
-         destroyed = enemies[tank.name].damage(1);
+        destroyed = enemies[tank.name].damage(1);
     else if(bulletType == 2)
         destroyed = enemies[tank.name].damage(2);
 
@@ -556,17 +805,18 @@ function fire () {
         nextFire = game.time.now + fireRate;
 
         var bullet;
-    if (bulletType == 1)
-        bullet = bullets.getFirstExists(false);
-    else if(bulletType == 2)
-        bullet = triShot.getFirstExists(false);
+        if (bulletType == 1)
+            bullet = bullets.getFirstExists(false);
+        else if(bulletType == 2)
+            bullet = triShot.getFirstExists(false);
         //var bullet2 = bullets.getFirstExists(false);
 
         bullet.reset(turret.x, turret.y);
 
-        
+
         bullet.rotation = game.physics.arcade.moveToPointer(bullet, 1000, game.input.activePointer, 500);
         //bullet2.rotation = game.physics.arcade.moveToPointer(bullet2, 30, game.input.activePointer, 30);
+
 
 
     }
