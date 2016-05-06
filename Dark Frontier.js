@@ -1,5 +1,5 @@
 
-EnemyTank = function (index, game, player, bullets) {
+Enemyship = function (index, game, player, bullets) {
 
     var x = game.world.randomX;
     var y = game.world.randomY;
@@ -12,58 +12,54 @@ EnemyTank = function (index, game, player, bullets) {
     this.nextFire = 0;
     this.alive = true;
 
-    this.shadow = game.add.sprite(x, y, 'enemy', 'shadow'); // position asset_key(name) spriteImage
-    this.tank = game.add.sprite(x, y, 'enemy', 'tank1');
-    this.turret = game.add.sprite(x, y, 'enemy', 'turret');
 
-    this.shadow.anchor.set(0.5); // sets origin to the middle
-    this.tank.anchor.set(0.5);
-    this.turret.anchor.set(0.3, 0.5);
+    this.ship = game.add.sprite(x, y, 'enemy', 'ship1');
 
-    this.tank.name = index.toString();
-    game.physics.enable(this.tank, Phaser.Physics.ARCADE);
-    this.tank.body.immovable = false;
-    this.tank.body.collideWorldBounds = true;
-    this.tank.body.bounce.setTo(1, 1);
+    this.ship.anchor.set(0.5);
 
-    this.tank.angle = game.rnd.angle();
+    this.ship.name = index.toString();
+    game.physics.enable(this.ship, Phaser.Physics.ARCADE);
+    this.ship.body.immovable = false;
+    this.ship.body.collideWorldBounds = true;
+    this.ship.body.bounce.setTo(1, 1);
+
+    this.ship.angle = game.rnd.angle();
 
 
-    game.physics.arcade.velocityFromRotation(this.tank.rotation, 100, this.tank.body.velocity); //??
+    game.physics.arcade.velocityFromRotation(this.ship.rotation, 100, this.ship.body.velocity); //??
 
 };
 
-EnemyTank.prototype.damage = function(damage) {
-
+Enemyship.prototype.damage = function(damage) {
 
     this.health -= damage;
 
     if (this.health <= 0)
     {
+
+
         this.alive = false;
 
-        this.shadow.kill();
-        this.tank.kill();
-        this.turret.kill();
+        this.ship.kill();
+
+
 
         return true;
+
+
     }
 
     return false;
 
 };
 
-EnemyTank.prototype.update = function() {
+Enemyship.prototype.update = function() {
 
-    this.shadow.x = this.tank.x;
-    this.shadow.y = this.tank.y;
-    this.shadow.rotation = this.tank.rotation;
 
-    this.turret.x = this.tank.x;
-    this.turret.y = this.tank.y;
-    this.turret.rotation = this.game.physics.arcade.angleBetween(this.tank, this.player);
 
-    if (this.game.physics.arcade.distanceBetween(this.tank, this.player) < 300)
+
+
+    if (this.game.physics.arcade.distanceBetween(this.ship, this.player) < 300)
     {
         if (this.game.time.now > this.nextFire && this.bullets.countDead() > 0)
         {
@@ -71,22 +67,22 @@ EnemyTank.prototype.update = function() {
 
             var bullet = this.bullets.getFirstDead();
 
-            bullet.reset(this.turret.x, this.turret.y);
+            bullet.reset(this.ship.x, this.ship.y);
 
             bullet.rotation = this.game.physics.arcade.moveToObject(bullet, this.player, 500);
         }
     }
-    // console.log(this.tank.position.y );
+    // console.log(this.ship.position.y );
 
-    if (this.tank.position.y > boundary1){
-        this.tank.position.y = boundary1 - 5;
-        this.tank.body.velocity.y = -this.tank.body.velocity.y;
+    if (this.ship.position.y > boundary1){
+        this.ship.position.y = boundary1 - 5;
+        this.ship.body.velocity.y = -this.ship.body.velocity.y;
         //console.log("Out of bounds Sir");
     }
 
-    if (this.tank.position.y < boundary){
-        this.tank.position.y = boundary + 5;
-        this.tank.body.velocity.y = -this.tank.body.velocity.y;
+    if (this.ship.position.y < boundary){
+        this.ship.position.y = boundary + 5;
+        this.ship.body.velocity.y = -this.ship.body.velocity.y;
         // console.log("Out of bounds Sir");
     }
 };
@@ -95,12 +91,11 @@ var game = new Phaser.Game(600, 800, Phaser.AUTO, 'phaser-example', { preload: p
 
 function preload () {
 
-    game.load.atlas('tank', 'assets/tanks.png', 'assets/tanks.json');
-    game.load.atlas('enemy', 'assets/enemy-tanks.png', 'assets/tanks.json');
-    game.load.image('logo', 'assets/logo.png');
+    game.load.atlas('ship', 'assets/Playership.png', 'assets/DF.json');
+    game.load.atlas('enemy', 'assets/EnemyShip.png', 'assets/DF.json');
     game.load.image('bullet', 'assets/bullet.png');
     game.load.image('p_bullet', 'assets/bullet.png');
-    game.load.image('earth', 'assets/scorched_earth.png');
+    game.load.image('earth', 'assets/spaceBackground.png');
     game.load.spritesheet('kaboom', 'assets/explosion.png', 64, 64, 23);
     game.load.image('colTest', 'assets/Test.png');
     game.load.image('trishot', 'assets/triBullet.png');
@@ -116,11 +111,8 @@ function preload () {
 
 var land;
 
-var shadow;
-var tank;
-var tank2;
-var turret;
-var turret2;
+var ship;
+var ship2;
 
 var colTest;
 var enemies;
@@ -132,7 +124,7 @@ var triShot;
 var boundary = 250;
 var boundary1 = 550;
 
-var logo;
+
 
 var currentSpeed = 0;
 var cursors;
@@ -155,8 +147,6 @@ var P_Turbo;
 var P_FireRate;
 var P_Trishot;
 
-var name1;
-var name2;
 
 var fb;
 var locations;
@@ -173,28 +163,28 @@ function create () {
     land = game.add.tileSprite(0, 0, 600, 800, 'earth', 0);
     land.fixedToCamera = true;
 
-    //  The base of our tank
-    tank = game.add.sprite (300, 800, 'tank', 'tank1');
-    tank.anchor.setTo(0.5, 0.5);
-    tank.animations.add('move', ['tank1', 'tank2', 'tank3', 'tank4', 'tank5', 'tank6'], 20, true);
-    tank.health = 100;
+    //  The base of our ship
+    ship = game.add.sprite (300, 800, 'ship', 'ship1');
+    ship.anchor.setTo(0.5, 0.5);
+
+    ship.health = 20;
 
     //  This will force it to decelerate and limit its speed
-    game.physics.enable(tank, Phaser.Physics.ARCADE);
-    tank.body.drag.set(0.2);
-    tank.body.maxVelocity.setTo(400, 400);
-    tank.body.collideWorldBounds = true;
+    game.physics.enable(ship, Phaser.Physics.ARCADE);
+    ship.body.drag.set(0.2);
+    ship.body.maxVelocity.setTo(400, 400);
+    ship.body.collideWorldBounds = true;
 
-    tank2 = game.add.sprite (300, 800, 'tank', 'tank1');
-    tank2.anchor.setTo(0.5, 0.5);
-    tank2.animations.add('move', ['tank1', 'tank2', 'tank3', 'tank4', 'tank5', 'tank6'], 20, true);
-    tank2.health = 100;
+    ship2 = game.add.sprite (300, 800, 'ship', 'ship1');
+    ship2.anchor.setTo(0.5, 0.5);
+    ship2.animations.add('move', ['ship1', 'ship2', 'ship3', 'ship4', 'ship5', 'ship6'], 20, true);
+    ship2.health = 20;
 
     //  This will force it to decelerate and limit its speed
-    game.physics.enable(tank2, Phaser.Physics.ARCADE);
-    tank2.body.drag.set(0.2);
-    tank2.body.maxVelocity.setTo(400, 400);
-    tank2.body.collideWorldBounds = true;
+    game.physics.enable(ship2, Phaser.Physics.ARCADE);
+    ship2.body.drag.set(0.2);
+    ship2.body.maxVelocity.setTo(400, 400);
+    ship2.body.collideWorldBounds = true;
 
     P_shield = game.add.group();
     P_shield.enableBody = true;
@@ -231,14 +221,8 @@ function create () {
     P_Trishot.setAll('anchor.y', 0.5);
     P_Trishot.setAll('outOfBoundsKill', true);
 
-    shield = game.make.sprite(tank.x, tank.y, 'shield');
+    shield = game.make.sprite(ship.x, ship.y, 'shield');
 
-    //  Finally the turret that we place on-top of the tank body
-    turret = game.add.sprite(0, 0, 'tank', 'turret');
-    turret.anchor.setTo(0.3, 0.5);
-
-    turret2 = game.add.sprite(0, 0, 'tank', 'turret');
-    turret2.anchor.setTo(0.3, 0.5);
 
     //  The enemies bullet group
     enemyBullets = game.add.group();
@@ -251,10 +235,7 @@ function create () {
     enemyBullets.setAll('outOfBoundsKill', true);
     enemyBullets.setAll('checkWorldBounds', true);
 
-    // animateERockets = enemyBullets.animations.add("Fire");
 
-    //enemyBullets.animations.play('Fire', 30, true);
-    //  Create some baddies to waste :)
     enemies = [];
 
     enemiesTotal = 20;
@@ -262,12 +243,9 @@ function create () {
 
     for (var i = 0; i < enemiesTotal; i++)
     {
-        enemies.push(new EnemyTank(i, game, tank, enemyBullets));
+        enemies.push(new Enemyship(i, game, ship, enemyBullets));
     }
 
-    //  A shadow below our tank
-    shadow = game.add.sprite(0, 0, 'tank', 'shadow');
-    shadow.anchor.setTo(0.5, 0.5);
 
     // shield = game.add.sprite(0, 0, 'shield');
     shield.anchor.setTo(0.5, 0.5);
@@ -278,22 +256,17 @@ function create () {
     bullets.enableBody = true;
     bullets.physicsBodyType = Phaser.Physics.ARCADE;
     bullets.createMultiple(30, 'bullet', 0, false);
-    bullets.setAll('anchor.x', 0.5);
+    bullets.setAll('anchor.x', 1);
     bullets.setAll('anchor.y', 0.5);
     bullets.setAll('outOfBoundsKill', true);
     bullets.setAll('checkWorldBounds', true);
     bulletType = 1;
 
 
-    playerBullets = game.add.group();
-    playerBullets.enableBody = true;
-    playerBullets.physicsBodyType = Phaser.Physics.ARCADE;
-    playerBullets.createMultiple(30, 'p_bullet', 0, false);
-    playerBullets.setAll('anchor.x', 0.5);
-    playerBullets.setAll('anchor.y', 0.5);
-    playerBullets.setAll('outOfBoundsKill', true);
-    playerBullets.setAll('checkWorldBounds', true);
-    playerBullets.forEach(getPlayerName, this);
+
+
+    playerBullets = game.add.sprite (300, 800, 'p_bullet');
+    playerBullets.anchor.setTo(0.5, 0.5);
 
 
     //  Our trishot group
@@ -317,18 +290,12 @@ function create () {
         explosionAnimation.animations.add('kaboom');
     }
 
-    tank.bringToTop();
-    turret.bringToTop();
+    ship.bringToTop();
 
-    tank2.bringToTop();
-    turret2.bringToTop();
+    ship2.bringToTop();
 
-    logo = game.add.sprite(0, 200, 'logo');
-    logo.fixedToCamera = true;
 
-    game.input.onDown.add(removeLogo, this);
-
-    game.camera.follow(tank);
+    game.camera.follow(ship);
     game.camera.deadzone = new Phaser.Rectangle(150, 150, 500, 300);
     game.camera.focusOnXY(0, 0);
 
@@ -339,27 +306,25 @@ function create () {
     BulletsFB = {};
 
     initFB();
-    addLocation('Chris', tank.x, turret.rotation);
+    addLocation('Ian', ship.x);
     bullets.forEach(getName, this);
     bullets.forEach(addBullets, this);
 
 
 }
 
-function removeLogo () {
-    game.input.onDown.remove(removeLogo, this);
-    logo.kill();
-}
+
 
 function getName(bullet){
+    bullet.name += "Ian ";
+    bullet.name += bullets.getIndex(bullet);
 
-    bullet.name = bullets.getIndex(bullet);
 
 }
 
 function getPlayerName(bullet){
-
-    bullet.name = playerBullets.getIndex(bullet);
+    bullet.name += "Chris ";
+    bullet.name += playerBullets.getIndex(bullet);
 
 }
 
@@ -411,7 +376,6 @@ function getKey(name){
     for(loc in locations){
         if(locations[loc].player == name){
             return loc;
-            //console.log(loc + " Loc");
         }
     }
     return null;
@@ -420,7 +384,6 @@ function getKey(name){
 function getBulletKey(name){
     var loc;
     for(loc in BulletsFB){
-        // console.log("Bulllet" +name);
         if(BulletsFB[loc].name == name){
             return loc;
 
@@ -430,10 +393,8 @@ function getBulletKey(name){
 }
 
 function addLocation(name, x, rotation) {
-    // Prevent a duplicate name...
     if (getKey(name)) return;
-    //console.log(getKey(name));
-    // Name is valid - go ahead and add it...
+
     fb.child("/location").push({
         player: name,
         x: x,
@@ -450,12 +411,10 @@ function formatPlayerInfo(location) {
     "use strict";
     var info = location + ":", loc = locations[location];
     info += loc.player + " @ (" + loc.x + ", " + loc.y + ") - " + loc.timestamp + "\n";
-    if(loc.player == 'Ian'){ /////////////////////////
-        tank2.x = loc.x;
-        turret2.rotation = loc.rotation;
+    if(loc.player == 'Chris'){
+        ship2.x = loc.x;
     }
-    //console.log(loc.x);
-    //console.log(loc);
+
 }
 
 function showLocations() {
@@ -473,7 +432,8 @@ function addBullets(bullets){
         x : bullets.x,
         y: bullets.y,
         type: bulletType,
-        name: bullets.name
+        name: bullets.name,
+        rotation:bullets.rotation
 
 
     }, function(err) {
@@ -486,7 +446,6 @@ function moveBullet(x, y){
     var bullet = playerBullets.getFirstExists(false);
     bullet.x = x;
     bullet.y = y;
-    //console.log(bullet.x);
 }
 
 function showBullets() {
@@ -494,32 +453,35 @@ function showBullets() {
     var loc, info = "";
     for (loc in BulletsFB) {
         info = getBullets(loc);
-       // moveBullet(info.x, info.y);
-        //console.log(info);
+
     }
 }
-/////////////// not drawing but loc.x ect is working fine i think//////////////////////
+
+
 function getBullets(bullets){
     var info = bullets + ":", loc = BulletsFB[bullets], itt = 0;
     info += "Name " + loc.name + " @ (" + loc.x + ", " + loc.y;
-   // console.log(loc + "       Bullet" + bullets.x);
-    //if(loc != null) {
 
-        var N_bullets;
-        N_bullets = playerBullets.getFirstExists(false);
+    var N_bullets = playerBullets;
+
+
+
+
+
         N_bullets.x = loc.x;
         N_bullets.y = loc.y;
-        //N_bullets.name = loc.name;
+
+        N_bullets.name = loc.name;
         bulletType2 = loc.type;
+        N_bullets.rotation = loc.rotation;
 
-        //N_bullets.rotation = game.physics.arcade.moveToXY(N_bullets, 1000, loc.x, loc.y);
 
-        //console.log(N_bullets.x);
-        //console.log(N_bullets.x + "  " + N_bullets.y + "   Name " + loc.name);
-   // }
-    //return info;
-    // console.log(loc.x);
-    //console.log(loc);
+
+//            console.log("Bullets function   " + N_bullets.x + "  " + N_bullets.y + "   Name " + N_bullets.name);
+
+
+
+
 }
 
 function updateLocation(ref, name, x, rotation){
@@ -527,8 +489,7 @@ function updateLocation(ref, name, x, rotation){
     fb.child("/location/" + ref).set({
         player: name,
         x: x,
-        timestamp: Firebase.ServerValue.TIMESTAMP,
-        rotation: rotation
+        timestamp: Firebase.ServerValue.TIMESTAMP
     }, function(err) {
         if(err) {
             console.dir(err);
@@ -539,54 +500,52 @@ function updateLocation(ref, name, x, rotation){
 
 function updateBullet(bullet){
     var ref = getBulletKey(bullet.name);
-    //console.log(ref);
-    //console.log(bullet.name);
+
     fb.child("/bullets/" + ref).set({
         x: bullet.x,
         y: bullet.y,
         name: bullet.name,
-        type: bulletType
+        type: bulletType,
+        rotation: bullet.rotation
     }, function(err) {
         if(err) {
             console.dir(err);
         }
     })
 }
-function test(bullet){
-    console.log("Name:  " +  bullet.name + " X " + bullet.x + " Y " + bullet.y);
 
-}
+
 
 function update () {
 
-    game.physics.arcade.overlap(enemyBullets, tank, bulletHitPlayer, null, this);
+    game.physics.arcade.overlap(enemyBullets, ship, bulletHitPlayer, null, this);
 
     //updateLoc(1);
     showLocations();
 
-    updateLocation(getKey('Chris'),'Chris', tank.x , turret.rotation);
+    updateLocation(getKey('Ian'),'Ian', ship.x);
 
 
     if(firing) {
 
-        //updateBullet(getKey(bullets.forEach(getName(this), this)), bullets.getFirstExists(false));
         bullets.forEach(updateBullet, this );
-        //updateBullet(bullets.forEach(getName, this), )
-        //updateBullet(getKey(bullet.forEach(getName(this)), this), )
 
 
     }
 
-    playerBullets.forEach(test, this);
 
 
+if(ship.health <= 0){
+    game.debug.text('YOU LOSE!!!', 300, 400);
+}
 
 
 
     if (enemiesAlive == 0){
-        enemiesTotal ++;
-        enemiesAlive = enemiesTotal;
-        console.log("YOU WIN!!");
+        //enemiesTotal ++;
+        //enemiesAlive = enemiesTotal;
+        //console.log("YOU WIN!!");
+        game.debug.text('YOU WIN!!!', 300, 400);
     }
 
 
@@ -595,13 +554,13 @@ function update () {
         if (enemies[i].alive)
         {
             //enemiesAlive++;
-            game.physics.arcade.collide(tank, enemies[i].tank);
+            game.physics.arcade.collide(ship, enemies[i].ship);
             if(bulletType == 1)
-                game.physics.arcade.overlap(bullets, enemies[i].tank, bulletHitEnemy, null, this);
+                game.physics.arcade.overlap(bullets, enemies[i].ship, bulletHitEnemy, null, this);
             else if (bulletType == 2)
-                game.physics.arcade.overlap(triShot, enemies[i].tank, bulletHitEnemy, null, this);
+                game.physics.arcade.overlap(triShot, enemies[i].ship, bulletHitEnemy, null, this);
 
-            game.physics.arcade.overlap(playerBullets, enemies[i].tank, bulletHitEnemy, null, this);
+            game.physics.arcade.overlap(playerBullets, enemies[i].ship, bulletHitEnemy, null, this);
 
             enemies[i].update();
 
@@ -611,10 +570,10 @@ function update () {
     }
 
 
-    game.physics.arcade.overlap(P_FireRate, tank, F_FireRate, null, this);
-    game.physics.arcade.overlap(P_shield, tank, F_shield, null, this);
-    game.physics.arcade.overlap(P_Trishot, tank, F_Trishot, null, this);
-    game.physics.arcade.overlap(P_Turbo, tank, F_Turbo, null, this);
+    game.physics.arcade.overlap(P_FireRate, ship, F_FireRate, null, this);
+    game.physics.arcade.overlap(P_shield, ship, F_shield, null, this);
+    game.physics.arcade.overlap(P_Trishot, ship, F_Trishot, null, this);
+    game.physics.arcade.overlap(P_Turbo, ship, F_Turbo, null, this);
 
 
 
@@ -627,56 +586,26 @@ function update () {
     if (cursors.left.isDown)
     {
 
-        tank.position.x -= currentSpeed;
-        //game.physics.arcade.accelerateToXY(tank, 600,300, currentSpeed);
+        ship.position.x -= currentSpeed;
+        //game.physics.arcade.accelerateToXY(ship, 600,300, currentSpeed);
     }
     else if (cursors.right.isDown)
     {
 
-        tank.position.x += currentSpeed;
-        //game.physics.arcade.accelerateToXY(tank, 0,300, currentSpeed);
+        ship.position.x += currentSpeed;
+        //game.physics.arcade.accelerateToXY(ship, 0,300, currentSpeed);
     }
 
-    /* if (cursors.up.isDown)
-     {
-     //  The speed we'll travel at
-     if(!speedBoost)
-     currentSpeed = 300;
-     else
-     currentSpeed = 6000;
-     }
-     else
-     {
-     if (currentSpeed > 0)
-     {
-     currentSpeed -= 4;
-     }
-     }
-
-     if (currentSpeed > 0)
-     {
-     game.physics.arcade.velocityFromRotation(tank.rotation, currentSpeed, tank.body.velocity);
-     } */
 
     land.tilePosition.x = -game.camera.x;
     land.tilePosition.y = -game.camera.y;
 
     //  Position all the parts and align rotations
-    shadow.x = tank.x;
-    shadow.y = tank.y;
-    shadow.rotation = tank.rotation;
 
-    shield.x = tank.x;
-    shield.y = tank.y;
-    shield.rotation = tank.rotation;
 
-    turret.x = tank.x;
-    turret.y = tank.y;
-
-    turret2.x = tank2.x;
-    turret2.y = tank2.y;
-
-    turret.rotation = game.physics.arcade.angleToPointer(turret);
+    shield.x = ship.x;
+    shield.y = ship.y;
+    shield.rotation = ship.rotation;
 
     if (game.input.activePointer.isDown)
     {
@@ -690,45 +619,43 @@ function update () {
         firing = false;
     }
 
-    showBullets();
+
 
     if(invulnerable == true){
-        tank.tint = 0xFF0000;
-        turret.tint = 0xFF0000;
-        tank.alpha = 0.3;
-        turret.alpha = 0.3;
+        ship.tint = 0xFF0000;
+        ship.alpha = 0.3;
     }
 
     if(invulnerable == false){
-        tank.tint = 0xFFFFFF;
-        turret.tint = 0xFFFFFF;
-        tank.alpha = 1;
-        turret.alpha = 1;
+        ship.tint = 0xFFFFFF;
+        ship.alpha = 1;
     }
+
+    showBullets();
 
 }
 
 
 
-function F_shield(tank, pickup){
+function F_shield(ship, pickup){
     shield = game.add.existing(shield);
     shieldBool = true;
     pickup.kill();
 }
 
-function F_Turbo(tank, pickup){
+function F_Turbo(ship, pickup){
     speedBoost = true;
     pickup.kill();
     var clock = game.time.events.add(Phaser.Timer.SECOND * 4, clockOver, game, 2);
 }
 
-function F_Trishot(tank , pickup){
+function F_Trishot(ship , pickup){
     bulletType = 2;
     pickup.kill();
     var clock = game.time.events.add(Phaser.Timer.SECOND * 4, clockOver, game, 3);
 }
 
-function F_FireRate(tank, pickup){
+function F_FireRate(ship, pickup){
 
     fireRate = 10;
     pickup.kill();
@@ -751,30 +678,33 @@ function clockOver(type){
 
 }
 
-function bulletHitPlayer (tank, bullet) {
+function bulletHitPlayer (ship, bullet) {
     bullet.kill();
+    console.log(shieldBool);
+    if (shieldBool == false) {
+        if (invulnerable == false) {
+            console.log("work");
+            ship.damage(1);
+            invulnerable = true;
 
-    if (shieldBool == true) {
-
+            var clock = game.time.events.add(Phaser.Timer.SECOND * 2, clockOver, game, 5);
+        }
+    }else{
         shieldCount+= 1;
 
-        if(shieldCount == 3){
+        if(shieldCount == 3) {
 
             shieldCount = 0;
             shieldBool = false;
             shield.kill();
 
-            if (invulnerable == false) {
-                tank.damage(1);
-                invulnerable = true;
-
-                var clock = game.time.events.add(Phaser.Timer.SECOND * 2, clockOver, game, 5);
-            }
         }
+
     }
+
 }
 
-function randDrop(tank){
+function randDrop(ship){
 
     var int = game.rnd.integerInRange(0, 100);
     var pickup;
@@ -783,26 +713,26 @@ function randDrop(tank){
     if (int >61 && int < 70){
 
         pickup = P_shield.getFirstExists(false);
-        pickup.reset(tank.x, tank.y);
-        game.physics.arcade.moveToXY(pickup, tank.x, 700, 300);
+        pickup.reset(ship.x, ship.y);
+        game.physics.arcade.moveToXY(pickup, ship.x, 700, 300);
         console.log("60");
     }
     if (int >71 && int < 80){
         pickup = P_Trishot.getFirstExists(false);
-        pickup.reset(tank.x, tank.y);
-        game.physics.arcade.moveToXY(pickup, tank.x, 700, 300);
+        pickup.reset(ship.x, ship.y);
+        game.physics.arcade.moveToXY(pickup, ship.x, 700, 300);
         console.log("70");
     }
     if (int >81 && int < 90){
         pickup = P_FireRate.getFirstExists(false);
-        pickup.reset(tank.x, tank.y);
-        game.physics.arcade.moveToXY(pickup, tank.x, 700, 300);
+        pickup.reset(ship.x, ship.y);
+        game.physics.arcade.moveToXY(pickup, ship.x, 700, 300);
         console.log("80");
     }
     if (int >91 && int < 100){
         pickup = P_Turbo.getFirstExists(false);
-        pickup.reset(tank.x, tank.y);
-        game.physics.arcade.moveToXY(pickup, tank.x, 700, 300);
+        pickup.reset(ship.x, ship.y);
+        game.physics.arcade.moveToXY(pickup, ship.x, 700, 300);
         console.log("90");
     }
 
@@ -810,22 +740,22 @@ function randDrop(tank){
 
 }
 
-function bulletHitEnemy (tank, bullet) {
+function bulletHitEnemy (ship, bullet) {
     bullet.kill();
 
     var destroyed;
     if(bulletType  == 1)
-        destroyed = enemies[tank.name].damage(1);
+        destroyed = enemies[ship.name].damage(1);
     else if(bulletType == 2)
-        destroyed = enemies[tank.name].damage(2);
+        destroyed = enemies[ship.name].damage(2);
 
 
     if (destroyed)
     {
         var explosionAnimation = explosions.getFirstExists(false);
-        explosionAnimation.reset(tank.x, tank.y);
+        explosionAnimation.reset(ship.x, ship.y);
         explosionAnimation.play('kaboom', 30, false, true);
-        randDrop(tank);
+        randDrop(ship);
         enemiesAlive--;
     }
 
@@ -836,23 +766,19 @@ function fire () {
     if (game.time.now > nextFire && bullets.countDead() > 0 && triShot.countDead() > 0)
     {
 
-
         nextFire = game.time.now + fireRate;
 
         var bullet;
         if (bulletType == 1)
             bullet = bullets.getFirstExists(false);
+
         else if(bulletType == 2)
             bullet = triShot.getFirstExists(false);
-        //var bullet2 = bullets.getFirstExists(false);
 
-        bullet.reset(turret.x, turret.y);
+        bullet.reset(ship.x, ship.y);
 
 
         bullet.rotation = game.physics.arcade.moveToPointer(bullet, 1000, game.input.activePointer);
-        //bullet2.rotation = game.physics.arcade.moveToPointer(bullet2, 30, game.input.activePointer, 30);
-
-
 
     }
 
@@ -860,9 +786,8 @@ function fire () {
 
 function render () {
 
-    // game.debug.text('Active Bullets: ' + bullets.countLiving() + ' / ' + bullets.length, 32, 32);
     game.debug.text('Enemies: ' + enemiesAlive + ' / ' + enemiesTotal, 32, 32);
-    game.debug.text('Health ' + tank.health + ' / ' + enemiesTotal, 32, 52);
+    game.debug.text('Health ' + ship.health + ' / ' + 20, 32, 52);
 
 }
 
