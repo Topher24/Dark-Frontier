@@ -8,7 +8,7 @@ EnemyTank = function (index, game, player, bullets) {
     this.health = 3;
     this.player = player;
     this.bullets = bullets;
-    this.fireRate = 1000;
+    this.fireRate = 1300;
     this.nextFire = 0;
     this.alive = true;
 
@@ -99,6 +99,7 @@ function preload () {
     game.load.atlas('enemy', 'assets/enemy-tanks.png', 'assets/tanks.json');
     game.load.image('logo', 'assets/logo.png');
     game.load.image('bullet', 'assets/bullet.png');
+    game.load.image('p_bullet', 'assets/bullet.png');
     game.load.image('earth', 'assets/scorched_earth.png');
     game.load.spritesheet('kaboom', 'assets/explosion.png', 64, 64, 23);
     game.load.image('colTest', 'assets/Test.png');
@@ -137,7 +138,7 @@ var currentSpeed = 0;
 var cursors;
 
 var bullets;
-var fireRate = 100;
+var fireRate = 300;
 var nextFire = 0;
 
 var bulletType;
@@ -287,11 +288,12 @@ function create () {
     playerBullets = game.add.group();
     playerBullets.enableBody = true;
     playerBullets.physicsBodyType = Phaser.Physics.ARCADE;
-    playerBullets.createMultiple(30, 'bullet', 0, false);
+    playerBullets.createMultiple(30, 'p_bullet', 0, false);
     playerBullets.setAll('anchor.x', 0.5);
     playerBullets.setAll('anchor.y', 0.5);
     playerBullets.setAll('outOfBoundsKill', true);
     playerBullets.setAll('checkWorldBounds', true);
+    playerBullets.forEach(getPlayerName, this);
 
 
     //  Our trishot group
@@ -337,7 +339,7 @@ function create () {
     BulletsFB = {};
 
     initFB();
-    addLocation('Ian', tank.x, turret.rotation);
+    addLocation('Chris', tank.x, turret.rotation);
     bullets.forEach(getName, this);
     bullets.forEach(addBullets, this);
 
@@ -352,6 +354,12 @@ function removeLogo () {
 function getName(bullet){
 
     bullet.name = bullets.getIndex(bullet);
+
+}
+
+function getPlayerName(bullet){
+
+    bullet.name = playerBullets.getIndex(bullet);
 
 }
 
@@ -442,7 +450,7 @@ function formatPlayerInfo(location) {
     "use strict";
     var info = location + ":", loc = locations[location];
     info += loc.player + " @ (" + loc.x + ", " + loc.y + ") - " + loc.timestamp + "\n";
-    if(loc.player == 'Chris'){
+    if(loc.player == 'Ian'){ /////////////////////////
         tank2.x = loc.x;
         turret2.rotation = loc.rotation;
     }
@@ -474,24 +482,42 @@ function addBullets(bullets){
 
 }
 
+function moveBullet(x, y){
+    var bullet = playerBullets.getFirstExists(false);
+    bullet.x = x;
+    bullet.y = y;
+    //console.log(bullet.x);
+}
+
 function showBullets() {
     "use strict";
     var loc, info = "";
     for (loc in BulletsFB) {
-        info += getBullets(loc);
-
+        info = getBullets(loc);
+       // moveBullet(info.x, info.y);
+        //console.log(info);
     }
 }
-
+/////////////// not drawing but loc.x ect is working fine i think//////////////////////
 function getBullets(bullets){
     var info = bullets + ":", loc = BulletsFB[bullets], itt = 0;
-    //info += loc.player + " @ (" + loc.x + ", " + loc.y + ") - " + loc.timestamp + "\n";
-    if(loc != null) {
-        var N_bullets = playerBullets.getFirstExists(false);
+    info += "Name " + loc.name + " @ (" + loc.x + ", " + loc.y;
+   // console.log(loc + "       Bullet" + bullets.x);
+    //if(loc != null) {
+
+        var N_bullets;
+        N_bullets = playerBullets.getFirstExists(false);
         N_bullets.x = loc.x;
         N_bullets.y = loc.y;
+        //N_bullets.name = loc.name;
         bulletType2 = loc.type;
-    }
+
+        //N_bullets.rotation = game.physics.arcade.moveToXY(N_bullets, 1000, loc.x, loc.y);
+
+        //console.log(N_bullets.x);
+        //console.log(N_bullets.x + "  " + N_bullets.y + "   Name " + loc.name);
+   // }
+    //return info;
     // console.log(loc.x);
     //console.log(loc);
 }
@@ -526,6 +552,10 @@ function updateBullet(bullet){
         }
     })
 }
+function test(bullet){
+    console.log("Name:  " +  bullet.name + " X " + bullet.x + " Y " + bullet.y);
+
+}
 
 function update () {
 
@@ -534,20 +564,21 @@ function update () {
     //updateLoc(1);
     showLocations();
 
-    updateLocation(getKey('Ian'),'Ian', tank.x , turret.rotation);
+    updateLocation(getKey('Chris'),'Chris', tank.x , turret.rotation);
 
-    showBullets();
+
     if(firing) {
 
         //updateBullet(getKey(bullets.forEach(getName(this), this)), bullets.getFirstExists(false));
         bullets.forEach(updateBullet, this );
         //updateBullet(bullets.forEach(getName, this), )
         //updateBullet(getKey(bullet.forEach(getName(this)), this), )
-        console.log(BulletsFB[getBulletKey("0")]);
+
 
     }
 
-    playerBullets.forEach(getBullets, this);
+    playerBullets.forEach(test, this);
+
 
 
 
@@ -569,6 +600,8 @@ function update () {
                 game.physics.arcade.overlap(bullets, enemies[i].tank, bulletHitEnemy, null, this);
             else if (bulletType == 2)
                 game.physics.arcade.overlap(triShot, enemies[i].tank, bulletHitEnemy, null, this);
+
+            game.physics.arcade.overlap(playerBullets, enemies[i].tank, bulletHitEnemy, null, this);
 
             enemies[i].update();
 
@@ -657,6 +690,8 @@ function update () {
         firing = false;
     }
 
+    showBullets();
+
     if(invulnerable == true){
         tank.tint = 0xFF0000;
         turret.tint = 0xFF0000;
@@ -709,7 +744,7 @@ function clockOver(type){
         bulletType = 1;
 
     if(type == 4)
-        fireRate = 100;
+        fireRate = 300;
 
     if(type == 5)
         invulnerable = false;
@@ -814,7 +849,7 @@ function fire () {
         bullet.reset(turret.x, turret.y);
 
 
-        bullet.rotation = game.physics.arcade.moveToPointer(bullet, 1000, game.input.activePointer, 500);
+        bullet.rotation = game.physics.arcade.moveToPointer(bullet, 1000, game.input.activePointer);
         //bullet2.rotation = game.physics.arcade.moveToPointer(bullet2, 30, game.input.activePointer, 30);
 
 
